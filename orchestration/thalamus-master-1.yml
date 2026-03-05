@@ -1,0 +1,380 @@
+name: THALAMUS — Master Orchestration Workflow
+# The central nervous system of the AION Brain Architecture
+# Routes, coordinates, and synchronizes all nine repos
+# Architect: Sheldon K. Salmon & ALBEDO | March 2026
+
+on:
+  # Manual trigger — Sheldon or ALBEDO initiates a routing event
+  workflow_dispatch:
+    inputs:
+      routing_class:
+        description: 'Input class (see INPUT-TAXONOMY.md)'
+        required: true
+        type: choice
+        options:
+          - FRAMEWORK_BUILD
+          - DOMAIN_KNOWLEDGE
+          - MEMORY_OPERATION
+          - SECURITY_CHECK
+          - MANIFEST_SYNC
+          - SCAN_ALL
+          - ABNORMAL
+      severity:
+        description: 'Severity tier'
+        required: true
+        type: choice
+        options:
+          - NOMINAL
+          - ELEVATED
+          - ALERT
+          - GENERAL
+        default: NOMINAL
+      target_repo:
+        description: 'Target repo (leave blank for auto-routing)'
+        required: false
+        type: choice
+        options:
+          - AUTO
+          - AION-BRAIN
+          - OCEAN-BRAIN
+          - HIPPOCAMPUS
+          - AMYGDALA
+          - SYNARA
+          - CEREBELLUM
+          - PREFRONTAL
+          - AGI
+        default: AUTO
+      notes:
+        description: 'Routing notes (optional)'
+        required: false
+
+  # Triggered by any repo in the brain via repository_dispatch
+  repository_dispatch:
+    types:
+      - thalamus-route         # Generic routing request
+      - thalamus-scan          # Trigger scanner across all repos
+      - thalamus-manifest-sync # Rebuild AGI master manifest
+      - thalamus-memory-write  # Route FCL candidate to HIPPOCAMPUS
+      - thalamus-amygdala-flag # Route security flag to AMYGDALA
+      - thalamus-abnormal      # Abnormal conditions declared
+
+jobs:
+
+  # ============================================================
+  # STEP 1 — INTAKE CLASSIFICATION
+  # Classify the input before any routing fires
+  # NRC principle: IF condition THEN action IF NOT alternative
+  # ============================================================
+  classify-input:
+    name: 'CLASSIFY | Intake Classification'
+    runs-on: ubuntu-latest
+    outputs:
+      routing_class: ${{ steps.classify.outputs.routing_class }}
+      severity: ${{ steps.classify.outputs.severity }}
+      destination: ${{ steps.classify.outputs.destination }}
+      routing_mode: ${{ steps.classify.outputs.routing_mode }}
+      session_timestamp: ${{ steps.classify.outputs.session_timestamp }}
+    steps:
+      - name: Classify input and determine routing
+        id: classify
+        run: |
+          echo "=== THALAMUS INPUT CLASSIFICATION ==="
+          echo "Timestamp: $(date -u '+%Y-%m-%dT%H:%M:%SZ')"
+
+          # Determine input source (dispatch or manual)
+          if [ "${{ github.event_name }}" == "repository_dispatch" ]; then
+            EVENT_TYPE="${{ github.event.action }}"
+            PAYLOAD_CLASS="${{ github.event.client_payload.routing_class }}"
+            PAYLOAD_SEVERITY="${{ github.event.client_payload.severity }}"
+            PAYLOAD_REPO="${{ github.event.client_payload.source_repo }}"
+          else
+            EVENT_TYPE="workflow_dispatch"
+            PAYLOAD_CLASS="${{ github.event.inputs.routing_class }}"
+            PAYLOAD_SEVERITY="${{ github.event.inputs.severity }}"
+            PAYLOAD_REPO="${{ github.event.inputs.target_repo }}"
+          fi
+
+          # Severity classification — NRC 4-tier model
+          SEVERITY="${PAYLOAD_SEVERITY:-NOMINAL}"
+          echo "severity=$SEVERITY" >> $GITHUB_OUTPUT
+
+          # Input class
+          ROUTING_CLASS="${PAYLOAD_CLASS:-SCAN_ALL}"
+          echo "routing_class=$ROUTING_CLASS" >> $GITHUB_OUTPUT
+
+          # Routing mode based on severity
+          if [ "$SEVERITY" == "GENERAL" ] || [ "$SEVERITY" == "ALERT" ]; then
+            ROUTING_MODE="ADVERSARIAL"
+          elif [ "$SEVERITY" == "ELEVATED" ]; then
+            ROUTING_MODE="ELEVATED"
+          else
+            ROUTING_MODE="NORMAL"
+          fi
+          echo "routing_mode=$ROUTING_MODE" >> $GITHUB_OUTPUT
+
+          # Auto-routing: determine destination from class
+          # Subsidiarity principle: route to closest competent node
+          if [ "$PAYLOAD_REPO" == "AUTO" ] || [ -z "$PAYLOAD_REPO" ]; then
+            case "$ROUTING_CLASS" in
+              FRAMEWORK_BUILD)    DESTINATION="AION-BRAIN" ;;
+              DOMAIN_KNOWLEDGE)   DESTINATION="OCEAN-BRAIN" ;;
+              MEMORY_OPERATION)   DESTINATION="HIPPOCAMPUS" ;;
+              SECURITY_CHECK)     DESTINATION="AMYGDALA" ;;
+              MANIFEST_SYNC)      DESTINATION="AGI" ;;
+              SCAN_ALL)           DESTINATION="ALL" ;;
+              ABNORMAL)           DESTINATION="AMYGDALA" ;;
+              *)                  DESTINATION="AGI" ;;
+            esac
+          else
+            DESTINATION="$PAYLOAD_REPO"
+          fi
+          echo "destination=$DESTINATION" >> $GITHUB_OUTPUT
+
+          # Session timestamp for this routing event
+          SESSION_TS=$(date -u '+%Y%m%dT%H%M%SZ')
+          echo "session_timestamp=$SESSION_TS" >> $GITHUB_OUTPUT
+
+          echo "=== CLASSIFICATION COMPLETE ==="
+          echo "Class:       $ROUTING_CLASS"
+          echo "Severity:    $SEVERITY"
+          echo "Mode:        $ROUTING_MODE"
+          echo "Destination: $DESTINATION"
+          echo "Session TS:  $SESSION_TS"
+
+  # ============================================================
+  # STEP 2 — AMYGDALA PRE-CLEARANCE
+  # Threat check before any routing fires
+  # NASA principle: Go/No-Go — any domain can call NO-GO
+  # Active for ELEVATED, ALERT, GENERAL severity
+  # ============================================================
+  amygdala-clearance:
+    name: 'AMYGDALA | Pre-Clearance Check'
+    needs: classify-input
+    if: |
+      needs.classify-input.outputs.severity == 'ELEVATED' ||
+      needs.classify-input.outputs.severity == 'ALERT' ||
+      needs.classify-input.outputs.severity == 'GENERAL' ||
+      needs.classify-input.outputs.routing_class == 'SECURITY_CHECK' ||
+      needs.classify-input.outputs.routing_class == 'ABNORMAL'
+    runs-on: ubuntu-latest
+    outputs:
+      clearance_status: ${{ steps.clearance.outputs.clearance_status }}
+      clearance_notes: ${{ steps.clearance.outputs.clearance_notes }}
+    steps:
+      - name: Run pre-clearance check
+        id: clearance
+        run: |
+          echo "=== AMYGDALA PRE-CLEARANCE ==="
+          SEVERITY="${{ needs.classify-input.outputs.severity }}"
+          CLASS="${{ needs.classify-input.outputs.routing_class }}"
+
+          # Eight Laws check — Law 6 Anti-Weaponization is auto-block
+          # All other violations route to architect review
+          if [ "$CLASS" == "ABNORMAL" ]; then
+            CLEARANCE="CLEARED_WITH_FLAGS"
+            NOTES="Abnormal routing declared — architect awareness required"
+          elif [ "$SEVERITY" == "GENERAL" ]; then
+            CLEARANCE="HELD"
+            NOTES="GENERAL severity — architect review required before routing proceeds"
+          elif [ "$SEVERITY" == "ALERT" ]; then
+            CLEARANCE="CLEARED_WITH_FLAGS"
+            NOTES="ALERT severity — monitoring active, proceed with logging"
+          else
+            CLEARANCE="CLEARED"
+            NOTES="Elevated severity — standard clearance granted"
+          fi
+
+          echo "clearance_status=$CLEARANCE" >> $GITHUB_OUTPUT
+          echo "clearance_notes=$NOTES" >> $GITHUB_OUTPUT
+          echo "Status: $CLEARANCE"
+          echo "Notes:  $NOTES"
+
+          # Hard stop on HELD
+          if [ "$CLEARANCE" == "HELD" ]; then
+            echo "::error::AMYGDALA HOLD — Routing halted. Architect review required."
+            exit 1
+          fi
+
+  # ============================================================
+  # STEP 3 — SCAN ALL REPOS
+  # Fires AION Structure Scanner across every brain repo
+  # Destination: ALL or SCAN_ALL class
+  # ============================================================
+  scan-all-repos:
+    name: 'SCAN | Trigger Structure Scanner'
+    needs: classify-input
+    if: |
+      needs.classify-input.outputs.destination == 'ALL' ||
+      needs.classify-input.outputs.routing_class == 'SCAN_ALL'
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        repo:
+          - AION-BRAIN
+          - OCEAN-BRAIN
+          - HIPPOCAMPUS
+          - AMYGDALA
+          - SYNARA
+          - CEREBELLUM
+          - PREFRONTAL
+          - AGI
+    steps:
+      - name: Dispatch scan to ${{ matrix.repo }}
+        uses: peter-evans/repository-dispatch@v3
+        with:
+          token: ${{ secrets.THALAMUS_DISPATCH_TOKEN }}
+          repository: AionSystem/${{ matrix.repo }}
+          event-type: run-structure-scanner
+          client-payload: |
+            {
+              "triggered_by": "THALAMUS",
+              "session_timestamp": "${{ needs.classify-input.outputs.session_timestamp }}",
+              "routing_class": "SCAN_ALL",
+              "severity": "${{ needs.classify-input.outputs.severity }}"
+            }
+
+  # ============================================================
+  # STEP 4 — MANIFEST SYNC
+  # Triggers AGI master manifest rebuild after scan
+  # Runs after all scans complete — AGI is CAPCOM
+  # ============================================================
+  manifest-sync:
+    name: 'AGI | Manifest Sync'
+    needs: [classify-input, scan-all-repos]
+    if: |
+      always() &&
+      (needs.classify-input.outputs.routing_class == 'MANIFEST_SYNC' ||
+       needs.classify-input.outputs.routing_class == 'SCAN_ALL') &&
+      needs.scan-all-repos.result != 'failure'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Dispatch manifest rebuild to AGI
+        uses: peter-evans/repository-dispatch@v3
+        with:
+          token: ${{ secrets.THALAMUS_DISPATCH_TOKEN }}
+          repository: AionSystem/AGI
+          event-type: rebuild-master-manifest
+          client-payload: |
+            {
+              "triggered_by": "THALAMUS",
+              "session_timestamp": "${{ needs.classify-input.outputs.session_timestamp }}",
+              "source": "scan-complete"
+            }
+
+  # ============================================================
+  # STEP 5 — TARGETED ROUTING
+  # Routes to specific destination repo
+  # Subsidiarity: route to closest competent node
+  # ATC principle: explicit handoff with confirmation
+  # ============================================================
+  targeted-route:
+    name: 'ROUTE | Dispatch to ${{ needs.classify-input.outputs.destination }}'
+    needs: classify-input
+    if: |
+      needs.classify-input.outputs.destination != 'ALL' &&
+      needs.classify-input.outputs.routing_class != 'SCAN_ALL' &&
+      needs.classify-input.outputs.routing_class != 'MANIFEST_SYNC' &&
+      needs.classify-input.outputs.routing_class != 'SECURITY_CHECK'
+    runs-on: ubuntu-latest
+    outputs:
+      dispatch_status: ${{ steps.dispatch.outputs.dispatch_status }}
+    steps:
+      - name: Dispatch to destination repo
+        id: dispatch
+        uses: peter-evans/repository-dispatch@v3
+        with:
+          token: ${{ secrets.THALAMUS_DISPATCH_TOKEN }}
+          repository: AionSystem/${{ needs.classify-input.outputs.destination }}
+          event-type: thalamus-incoming
+          client-payload: |
+            {
+              "triggered_by": "THALAMUS",
+              "routing_class": "${{ needs.classify-input.outputs.routing_class }}",
+              "severity": "${{ needs.classify-input.outputs.severity }}",
+              "routing_mode": "${{ needs.classify-input.outputs.routing_mode }}",
+              "session_timestamp": "${{ needs.classify-input.outputs.session_timestamp }}",
+              "notes": "${{ github.event.inputs.notes }}"
+            }
+      - name: Confirm dispatch (ACK)
+        id: dispatch_ack
+        run: |
+          echo "dispatch_status=DISPATCHED" >> $GITHUB_OUTPUT
+          echo "=== HANDOFF CONFIRMED ==="
+          echo "Destination: ${{ needs.classify-input.outputs.destination }}"
+          echo "Class:       ${{ needs.classify-input.outputs.routing_class }}"
+          echo "Severity:    ${{ needs.classify-input.outputs.severity }}"
+          echo "Mode:        ${{ needs.classify-input.outputs.routing_mode }}"
+          echo "Timestamp:   ${{ needs.classify-input.outputs.session_timestamp }}"
+
+  # ============================================================
+  # STEP 6 — MEMORY WRITE
+  # Routes FCL candidates to HIPPOCAMPUS
+  # ============================================================
+  memory-write:
+    name: 'HIPPOCAMPUS | Memory Write'
+    needs: classify-input
+    if: needs.classify-input.outputs.routing_class == 'MEMORY_OPERATION'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Dispatch FCL candidate to HIPPOCAMPUS
+        uses: peter-evans/repository-dispatch@v3
+        with:
+          token: ${{ secrets.THALAMUS_DISPATCH_TOKEN }}
+          repository: AionSystem/HIPPOCAMPUS
+          event-type: fcl-candidate-incoming
+          client-payload: |
+            {
+              "triggered_by": "THALAMUS",
+              "session_timestamp": "${{ needs.classify-input.outputs.session_timestamp }}",
+              "routing_class": "MEMORY_OPERATION",
+              "severity": "${{ needs.classify-input.outputs.severity }}"
+            }
+
+  # ============================================================
+  # STEP 7 — ROUTING LOG
+  # Append-only record of every routing event
+  # Talmud principle: minority paths preserved
+  # Yam principle: relay confirmation at every hop
+  # ============================================================
+  routing-log:
+    name: 'LOG | Routing Event Record'
+    needs: [classify-input, targeted-route, scan-all-repos, manifest-sync, memory-write]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout THALAMUS
+        uses: actions/checkout@v4
+
+      - name: Append routing event to log
+        run: |
+          LOG_FILE="routing/RELAY-LOG.md"
+          mkdir -p routing
+          if [ ! -f "$LOG_FILE" ]; then
+            echo "# THALAMUS RELAY LOG" > "$LOG_FILE"
+            echo "## Append-only. Never edited. Full routing history." >> "$LOG_FILE"
+            echo "" >> "$LOG_FILE"
+          fi
+
+          cat >> "$LOG_FILE" << EOF
+
+          ---
+          **Session:** ${{ needs.classify-input.outputs.session_timestamp }}
+          **Class:** ${{ needs.classify-input.outputs.routing_class }}
+          **Severity:** ${{ needs.classify-input.outputs.severity }}
+          **Mode:** ${{ needs.classify-input.outputs.routing_mode }}
+          **Destination:** ${{ needs.classify-input.outputs.destination }}
+          **Scan:** ${{ needs.scan-all-repos.result }}
+          **Manifest:** ${{ needs.manifest-sync.result }}
+          **Route:** ${{ needs.targeted-route.result }}
+          **Memory:** ${{ needs.memory-write.result }}
+          **Triggered by:** ${{ github.actor }}
+          **GitHub Run:** ${{ github.run_id }}
+          EOF
+
+      - name: Commit routing log
+        run: |
+          git config user.name "THALAMUS"
+          git config user.email "thalamus@aionsystem.noreply"
+          git add routing/RELAY-LOG.md
+          git diff --cached --quiet || git commit -m "RELAY LOG: ${{ needs.classify-input.outputs.session_timestamp }} | ${{ needs.classify-input.outputs.routing_class }} → ${{ needs.classify-input.outputs.destination }}"
+          git push
