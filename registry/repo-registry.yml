@@ -1,1 +1,225 @@
+# repo-registry.yml
+# THALAMUS — Registry of All Brain Repos
+# Single source of truth for endpoints, functions, and routing receives
+# Architects: Sheldon K. Salmon & ALBEDO | March 2026
+#
+# USAGE:
+#   All workflow dispatch targets reference this file.
+#   Do not hardcode repo names or URLs in workflows — reference registry only.
+#   Adding a new repo: add entry here first, then create the repo.
+#   Removing a repo: mark status: DEPRECATED before removing dispatch references.
+#
+# FIELD DEFINITIONS:
+#   name          — repo name exactly as it appears on GitHub
+#   org           — GitHub organization
+#   url           — repo URL
+#   dispatch_url  — GitHub API endpoint for repository_dispatch events
+#   branch        — default branch
+#   brain_analog  — biological brain structure this repo maps to
+#   function      — primary operational role
+#   routing_receives — input classes that route to this repo (from INPUT-TAXONOMY)
+#   status        — ACTIVE | BUILDING | DEPRECATED
+#   readme_complete — whether the README is final
+#   notes         — build state or coupling notes
+
+registry:
+  version: "1.0"
+  last_updated: "2026-03-05"
+  architect: "Sheldon K. Salmon"
+  total_repos: 9
+
+repos:
+
+  - name: THALAMUS
+    org: AionSystem
+    url: https://github.com/AionSystem/THALAMUS
+    dispatch_url: https://api.github.com/repos/AionSystem/THALAMUS/dispatches
+    branch: main
+    brain_analog: Thalamus — relay station
+    function: >
+      Entry point for all signals. Classifies inputs, determines routing destination,
+      fires dispatch events, confirms handoffs, logs every routing event.
+      Orchestrates all nine repos. Does not process content — routes it.
+    routing_receives:
+      - ALL — every signal enters THALAMUS first
+    status: ACTIVE
+    readme_complete: true
+    notes: >
+      Master workflow thalamus-master.yml built. Folder structure complete.
+      Spec files in active build. THALAMUS_DISPATCH_TOKEN required in secrets.
+
+  - name: AGI
+    org: AionSystem
+    url: https://github.com/AionSystem/AGI
+    dispatch_url: https://api.github.com/repos/AionSystem/AGI/dispatches
+    branch: main
+    brain_analog: Corpus Callosum — bridge layer
+    function: >
+      Bridges left hemisphere (AION-BRAIN) and right hemisphere (OCEAN-BRAIN).
+      Holds the master manifest of the entire architecture. Serves as the single
+      external communication channel — CAPCOM of the AION brain. All external
+      output routes through AGI.
+    routing_receives:
+      - MANIFEST_SYNC
+      - cross-hemisphere signals
+      - external communication requests
+    status: ACTIVE
+    readme_complete: true
+    notes: >
+      AGI README updated March 2026 with full brain diagram. Master manifest
+      architecture specified. FRONTIER_LOG.md tracks unmapped territory.
+
+  - name: AION-BRAIN
+    org: AionSystem
+    url: https://github.com/AionSystem/AION-BRAIN
+    dispatch_url: https://api.github.com/repos/AionSystem/AION-BRAIN/dispatches
+    branch: main
+    brain_analog: Left Hemisphere — logic and framework architecture
+    function: >
+      Houses the AION Constitutional Stack — 60+ frameworks for epistemic
+      precision, certainty infrastructure, and AI reliability architecture.
+      FSVE, LAV, AION, ASL, GENESIS, TOPOS, Eight Laws, and all associated
+      validation infrastructure. The reasoning layer.
+    routing_receives:
+      - FRAMEWORK_BUILD
+      - framework audit requests
+      - FCL validation events
+    status: ACTIVE
+    readme_complete: true
+    notes: >
+      Primary repo. 2040+ files, 604 directories. FSVE and LAV at M-STRONG.
+      AION Structure Scanner v2.1 deployed. FCL archive in HIPPOCAMPUS migration pending.
+
+  - name: OCEAN-BRAIN
+    org: AionSystem
+    url: https://github.com/AionSystem/OCEAN-BRAIN
+    dispatch_url: https://api.github.com/repos/AionSystem/OCEAN-BRAIN/dispatches
+    branch: main
+    brain_analog: Right Hemisphere — domain knowledge and synthesis
+    function: >
+      Domain knowledge repository. Sciences, history, culture, emerging fields,
+      cross-domain synthesis. What AION-BRAIN reasons about, OCEAN-BRAIN knows.
+      Pattern recognition across disciplines.
+    routing_receives:
+      - DOMAIN_KNOWLEDGE
+      - cross-domain synthesis requests
+      - research retrieval events
+    status: ACTIVE
+    readme_complete: true
+    notes: Domain folders being built. SIE archive sweep findings feed this repo.
+
+  - name: HIPPOCAMPUS
+    org: AionSystem
+    url: https://github.com/AionSystem/HIPPOCAMPUS
+    dispatch_url: https://api.github.com/repos/AionSystem/HIPPOCAMPUS/dispatches
+    branch: main
+    brain_analog: Hippocampus — memory and archive
+    function: >
+      Permanent memory layer. Stores the FCL validation archive, routing event
+      history from THALAMUS RELAY-LOG, session findings, and everything the
+      brain has learned. Feeds THALAMUS LEARNING-LAYER with routing history.
+      Append-only architecture — nothing is deleted.
+    routing_receives:
+      - MEMORY_OPERATION
+      - FCL candidate events
+      - routing history writes from THALAMUS
+    status: ACTIVE
+    readme_complete: true
+    notes: >
+      COUPLED TO THALAMUS LEARNING-LAYER. HIPPOCAMPUS event logging must be
+      live before LEARNING-LAYER.md in THALAMUS routing/ can be filled.
+      FCL migration from AION-BRAIN pending.
+
+  - name: AMYGDALA
+    org: AionSystem
+    url: https://github.com/AionSystem/AMYGDALA
+    dispatch_url: https://api.github.com/repos/AionSystem/AMYGDALA/dispatches
+    branch: main
+    brain_analog: Amygdala — threat detection and security
+    function: >
+      Security clearance layer. Every output clears AMYGDALA before it exits
+      the brain. Threat detection, adversarial pattern recognition, red-team
+      archive, Eight Laws compliance check. Go/No-Go authority — any condition
+      that triggers HELD stops the entire routing chain.
+    routing_receives:
+      - SECURITY_CHECK
+      - pre-clearance requests from all repos
+      - adversarial flag events
+    status: ACTIVE
+    readme_complete: true
+    notes: >
+      HELD status is asymmetric — easier to enter than to exit (Sanhedrin principle).
+      GENERAL severity routes here for architect review before any routing resumes.
+      Red-team archive and TOPOS-BIN equivalent to be built.
+
+  - name: SYNARA
+    org: AionSystem
+    url: https://github.com/AionSystem/SYNARA
+    dispatch_url: https://api.github.com/repos/AionSystem/SYNARA/dispatches
+    branch: main
+    brain_analog: Limbic System + Insula — personality and internal state
+    function: >
+      The felt layer. Houses ALBEDO personality architecture, Gap Response
+      Architecture, VOCA register system, epistemic discomfort signals, and
+      fluency monitor. Governs tone, emotional signal detection, and the
+      internal state monitor that modifies output register.
+    routing_receives:
+      - emotional signal events
+      - register calibration requests
+      - session state changes
+    status: ACTIVE
+    readme_complete: true
+    notes: >
+      ALBEDO operating architecture lives here. VOCA v0.1 specification.
+      Sits after AMYGDALA clearance, before CEREBELLUM refinement in output sequence.
+
+  - name: CEREBELLUM
+    org: AionSystem
+    url: https://github.com/AionSystem/CEREBELLUM
+    dispatch_url: https://api.github.com/repos/AionSystem/CEREBELLUM/dispatches
+    branch: main
+    brain_analog: Cerebellum — refinement and precision
+    function: >
+      Precision gate. Every output passes through CEREBELLUM for LAV v1.5
+      validation, density calibration, ambiguity check, and roughness
+      preservation. Removes linguistic imprecision. Preserves genuine
+      uncertainty. Never compresses accuracy — only compresses register.
+    routing_receives:
+      - pre-output refinement requests
+      - LAV validation events
+    status: ACTIVE
+    readme_complete: true
+    notes: >
+      Sits between SYNARA and PREFRONTAL in output sequence.
+      BUILD register never compresses. Roughness guard preserves [?] tags.
+
+  - name: PREFRONTAL
+    org: AionSystem
+    url: https://github.com/AionSystem/PREFRONTAL
+    dispatch_url: https://api.github.com/repos/AionSystem/PREFRONTAL/dispatches
+    branch: main
+    brain_analog: Prefrontal Cortex — presentation and structure
+    function: >
+      Final output layer. Format decisions — prose or list, headers or flat,
+      dense or accessible, report or reply. Register-to-format mapping from
+      VOCA. The last layer before output reaches the human — decides how the
+      brain speaks, not just what it says.
+    routing_receives:
+      - final output formatting requests
+      - structure decision events
+    status: ACTIVE
+    readme_complete: true
+    notes: >
+      Last repo in the output sequence before OUTPUT exits to user.
+      PREFRONTAL never modifies content — only presentation.
+
+# ROUTING SEQUENCE (for reference)
+# INPUT → THALAMUS → AGI → AION-BRAIN/OCEAN-BRAIN → HIPPOCAMPUS
+# → AMYGDALA → SYNARA → CEREBELLUM → PREFRONTAL → OUTPUT
+
+# REQUIRED SECRETS
+# THALAMUS_DISPATCH_TOKEN — repo + workflow scope
+# Store in: THALAMUS repository secrets
+# Rotate: 90-day schedule or architect calendar protocol
+# Never hardcode. Never commit to any file.
 
